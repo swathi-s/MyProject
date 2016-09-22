@@ -10,7 +10,8 @@
 
     <!-- Footer aligned to bottom -->
 
-    <include layout="@layout/footer" />
+    <include layout="@layout/footer"
+        android:id="@+id/include" />
 
 
     <!-- Content below header and above footer -->
@@ -25,7 +26,29 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Content goes here ..."/>
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="showName"
+            android:id="@+id/showName"
+            android:layout_below="@+id/showImg" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="WELCOME"
+            android:id="@+id/textView9"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true" />
+
+        <ImageView
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:id="@+id/showImg"
+            android:src="@drawable/profile"
+            android:layout_below="@+id/textView9" />
     </RelativeLayout>
+
+
 
 </RelativeLayout>

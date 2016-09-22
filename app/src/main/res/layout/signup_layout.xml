@@ -9,10 +9,11 @@
         android:inputType="textPersonName"
         android:ems="10"
         android:id="@+id/enterName"
+        android:hint="Enter Your Name"
+        android:layout_marginTop="133dp"
         android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:hint="Enter Your Name" />
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
 
     <EditText
         android:layout_width="match_parent"
@@ -44,10 +45,9 @@
         android:text="Save User"
         android:onClick="saveUser"
         android:id="@+id/button3"
-        android:layout_marginTop="92dp"
-        android:layout_below="@+id/enterPassword"
-        android:layout_toRightOf="@+id/button5"
-        android:layout_toEndOf="@+id/button5" />
+        android:layout_alignBottom="@+id/button5"
+        android:layout_alignRight="@+id/enterImg"
+        android:layout_alignEnd="@+id/enterImg" />
 
     <Button
         android:layout_width="wrap_content"
@@ -55,9 +55,15 @@
         android:text="Go to Main"
         android:id="@+id/button5"
         android:onClick="logout"
-        android:layout_alignTop="@+id/button3"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginLeft="69dp"
-        android:layout_marginStart="69dp" />
+        android:layout_below="@+id/enterPassword"
+        android:layout_toLeftOf="@+id/enterImg"
+        android:layout_toStartOf="@+id/enterImg" />
+
+    <ImageView
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:id="@+id/enterImg"
+        android:src="@drawable/profile"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true" />
 </RelativeLayout>

@@ -18,9 +18,10 @@ public class EmployeeDatabase extends SQLiteOpenHelper {
     public static final String NAME = "name";
     public static final String USERNAME = "username";
     public static final String PASSWORD = "password";
+    public static final String IMAGE ="image";
     Context context;
 
-    public static final String createQuery = "CREATE TABLE "+ TABLE_NAME +" ( " + UID + " INTEGER PRIMARY KEY AUTOINCREMENT," + NAME + " VARCHAR(50), " + USERNAME + " VARCHAR(250), " + PASSWORD + " VARCHAR(250))";
+    public static final String createQuery = "CREATE TABLE "+ TABLE_NAME +" ( " + UID + " INTEGER PRIMARY KEY AUTOINCREMENT," + NAME + " VARCHAR(50), " + USERNAME + " VARCHAR(250), " + PASSWORD + " VARCHAR(250), " + IMAGE + " VARCHAR(255))";
     //public static final String createQuery = "CREATE TABLE " + TABLE_NAME + " ( " + UID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + NAME + " VARCHAR(255), " + PASSWORD + " VARCHAR(255))";
 
     public static final String dropQuery = "DROP TABLE IF EXISTS "+ TABLE_NAME;
