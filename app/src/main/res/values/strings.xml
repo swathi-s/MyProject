@@ -6,5 +6,6 @@
         <item>List DB items</item>
         <item>Dashboard</item>
         <item>Edit Profile</item>
+        <item>Sync Data From Server</item>
     </string-array>
 </resources>

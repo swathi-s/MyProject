@@ -1,5 +1,6 @@
 package com.example.swathi.myproject;
 
+import android.app.ProgressDialog;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -21,6 +22,14 @@ import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.JsonObjectRequest;
+
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -333,61 +342,69 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
     public void logout(View view) {
+
+        user = null;
+        userID = Long.valueOf(0);
         setContentView(R.layout.activity_main);
     }
 
     public void editProfile()
     {
-        setContentView(R.layout.edit_profile);
 
-        Spinner spinner = (Spinner) findViewById(R.id.spinner);
-
-        ArrayAdapter adapter = ArrayAdapter.createFromResource(this,R.array.options,android.R.layout.simple_spinner_dropdown_item);
-
-        spinner.setAdapter(adapter);
-        spinner.setOnItemSelectedListener(this);
-
-        EditText editName = (EditText) findViewById(R.id.editName);
-        EditText editUserName = (EditText) findViewById(R.id.editUserName);
-        EditText editPassword = (EditText) findViewById(R.id.editPassword);
-        selectImg = (ImageView) findViewById(R.id.editImg);
-        selectImg.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent();
-                intent.setType("image/*");
-                intent.setAction(Intent.ACTION_GET_CONTENT);
-                startActivityForResult(Intent.createChooser(intent,"select image"),1);
-            }
-        });
-
-        String[] columns = {employeeDatabase.NAME,employeeDatabase.USERNAME,employeeDatabase.PASSWORD,employeeDatabase.IMAGE};
-        String[] selectionArgs = {user};
-        SQLiteDatabase db =  employeeDatabase.getWritableDatabase();
-        Cursor cursor = db.query(employeeDatabase.TABLE_NAME,columns,employeeDatabase.USERNAME +"=?",selectionArgs,null,null,null,null);
-
-        if(cursor.getCount() > 0)
+        if(TextUtils.isEmpty(user) || TextUtils.isEmpty(userID.toString()))
         {
-            while(cursor.moveToNext())
-            {
-                int nameIndex = cursor.getColumnIndex(employeeDatabase.NAME);
-                String nameValue = cursor.getString(nameIndex);
-                editName.setText(nameValue);
+            Toast.makeText(this,"Please login again to update the profile",Toast.LENGTH_SHORT).show();
+        }
+        else {
+            setContentView(R.layout.edit_profile);
 
-                int usernameIndex = cursor.getColumnIndex(employeeDatabase.USERNAME);
-                String userNameValue = cursor.getString(usernameIndex);
-                editUserName.setText(userNameValue);
+            Spinner spinner = (Spinner) findViewById(R.id.spinner);
 
-                int passwordIndex = cursor.getColumnIndex(employeeDatabase.PASSWORD);
-                String passwordValue = cursor.getString(passwordIndex);
-                editPassword.setText(passwordValue);
+            ArrayAdapter adapter = ArrayAdapter.createFromResource(this, R.array.options, android.R.layout.simple_spinner_dropdown_item);
 
-                int imageIndex = cursor.getColumnIndex(employeeDatabase.IMAGE);
-                String imageValue = cursor.getString(imageIndex);
-                selectImg.setImageURI(Uri.parse(imageValue));
+            spinner.setAdapter(adapter);
+            spinner.setOnItemSelectedListener(this);
+
+            EditText editName = (EditText) findViewById(R.id.editName);
+            EditText editUserName = (EditText) findViewById(R.id.editUserName);
+            EditText editPassword = (EditText) findViewById(R.id.editPassword);
+            selectImg = (ImageView) findViewById(R.id.editImg);
+            selectImg.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent();
+                    intent.setType("image/*");
+                    intent.setAction(Intent.ACTION_GET_CONTENT);
+                    startActivityForResult(Intent.createChooser(intent, "select image"), 1);
+                }
+            });
+
+            String[] columns = {employeeDatabase.NAME, employeeDatabase.USERNAME, employeeDatabase.PASSWORD, employeeDatabase.IMAGE};
+            String[] selectionArgs = {user};
+            SQLiteDatabase db = employeeDatabase.getWritableDatabase();
+            Cursor cursor = db.query(employeeDatabase.TABLE_NAME, columns, employeeDatabase.USERNAME + "=?", selectionArgs, null, null, null, null);
+
+            if (cursor.getCount() > 0) {
+                while (cursor.moveToNext()) {
+                    int nameIndex = cursor.getColumnIndex(employeeDatabase.NAME);
+                    String nameValue = cursor.getString(nameIndex);
+                    editName.setText(nameValue);
+
+                    int usernameIndex = cursor.getColumnIndex(employeeDatabase.USERNAME);
+                    String userNameValue = cursor.getString(usernameIndex);
+                    editUserName.setText(userNameValue);
+
+                    int passwordIndex = cursor.getColumnIndex(employeeDatabase.PASSWORD);
+                    String passwordValue = cursor.getString(passwordIndex);
+                    editPassword.setText(passwordValue);
+
+                    int imageIndex = cursor.getColumnIndex(employeeDatabase.IMAGE);
+                    String imageValue = cursor.getString(imageIndex);
+                    selectImg.setImageURI(Uri.parse(imageValue));
 
 
-                //editName.setText();
+                    //editName.setText();
+                }
             }
         }
 
@@ -441,10 +458,49 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
         else if(option.equals("Edit Profile"))
         {
-            Log.d("options","entered into edit profile");
-            editProfile();
+            if(TextUtils.isEmpty(user) || TextUtils.isEmpty(userID.toString()))
+            {
+                Toast.makeText(this,"Please login again to update the profile",Toast.LENGTH_LONG).show();
+            }
+            else {
+                Log.d("options", "entered into edit profile");
+                editProfile();
+            }
         }
+        else if(option.equals("Sync Data From Server"))
+        {
+            getDataFromServer();
+        }
+    }
 
+    public void getDataFromServer()
+    {
+        String tag_json_obj = "json_obj_req";
+        String url = "http://192.168.1.7/employee_details.php";
+        final ProgressDialog progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Loading ...");
+        progressDialog.show();
+
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET,
+                url,
+                null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        Log.d("Response",response.toString());
+                        Toast.makeText(getApplicationContext(),"successfully made request to server",Toast.LENGTH_LONG).show();
+                        progressDialog.hide();
+                    }
+                },
+                new Response.ErrorListener(){
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.d("Response","error: "+ error.getMessage());
+                        Toast.makeText(getApplicationContext(),"failed to made request to server",Toast.LENGTH_LONG).show();
+                        progressDialog.hide();
+                    }
+                });
+        AppController.getInstance().addToRequestQueue(jsonObjectRequest,tag_json_obj);
     }
 
     public void listDbItems()
@@ -486,6 +542,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         DataAdapter adapter1 = new DataAdapter(this,names,usernames,passwords);
         listView.setAdapter(adapter1);
+
+        listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                Toast.makeText(getApplicationContext(),"clicked on the position "+ String.valueOf(id),Toast.LENGTH_LONG).show();
+                return true;
+            }
+        });
 
         //Toast.makeText(this,"data"+names[1],Toast.LENGTH_SHORT).show();
 
