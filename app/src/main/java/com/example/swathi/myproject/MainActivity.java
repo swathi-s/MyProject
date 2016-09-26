@@ -23,16 +23,20 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
 
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
 
@@ -46,6 +50,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     //to store the user id
     Long userID;
+
+    //To store the name
+    String name;
+
+    //To store the password
+    String password;
 
     //to store the selected image
     ImageView selectImg;
@@ -150,6 +160,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                     //get the userid
                     userID = cursor.getLong(idIndex);
+
+
+                    int nameIndex = cursor.getColumnIndex(employeeDatabase.NAME);
+                    name = cursor.getString(nameIndex);
                 }
 
                 //set the user name
@@ -285,47 +299,89 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             //get the writable instance of employee database db
             SQLiteDatabase db = employeeDatabase.getWritableDatabase();
 
-            //
+            //Create the object of ContentValues class
             ContentValues contentValues = new ContentValues();
+
+            //To insert the values into db, put those values into contentValues
             contentValues.put(employeeDatabase.NAME,name);
             contentValues.put(employeeDatabase.USERNAME,uname);
             contentValues.put(employeeDatabase.PASSWORD,pword);
             contentValues.put(employeeDatabase.IMAGE,selctedImg);
 
+            /**
+             * Insert the values into DB, by using db.insert()
+             *
+             * This function will accept 3 arguments
+             *
+             * 1. Table name
+             * 2. null column hack, empty contentValues are not allowed in android, So here give the nullable column name, to give null value
+             * 3. contet values
+             */
+
             long id = db.insert(employeeDatabase.TABLE_NAME,null,contentValues);
             Toast.makeText(this,name + "has been inserted into DB ",Toast.LENGTH_SHORT).show();
+
+            //If user successfully added to db, then set his id as userId
             if(id > 0)
             {
                 user = uname;
                 userID = id;
+
+                //After the signup, redirect the user to dashboard page
                 dashboard();
             }
         }
     }
 
+    /**
+     * To update  the user information in DB
+     * @param view
+     */
     public void updateUser(View view) {
 
         Log.d("user id",userID.toString());
 
+        //Set the selection arguments to update the entry
         String[] whereArgs = {userID.toString()};
+
+        //get the updated name
         EditText nameTxt = (EditText) findViewById(R.id.editName);
+
+        //get the updated username
         EditText usernameTxt = (EditText) findViewById(R.id.editPassword);
+
+        //get the password
         EditText passwordTxt = (EditText) findViewById(R.id.editPassword);
 
+        //get the selected image, @TODO : not used
         ImageView selectedImg = (ImageView) findViewById(R.id.editImg);
 
+        //convert the name to string
         String name = nameTxt.getText().toString();
+
+        //convert the username to string
         String uname = usernameTxt.getText().toString();
+
+        //COnvert the password to string
         String pword = passwordTxt.getText().toString();
+
+        //Convert the imageuri to string
         String selctedImg = imageUri.toString();
+
+        //If any of the field is empty, then display the error message
         if(TextUtils.isEmpty(name) || TextUtils.isEmpty(uname) || TextUtils.isEmpty(pword))
         {
             Toast.makeText(this,"all the fields are required",Toast.LENGTH_LONG).show();
         }
         else
         {
+            //If all the fields are provided, then update the entry in DB
             SQLiteDatabase db = employeeDatabase.getWritableDatabase();
+
+            //Create the object of contentValues class
             ContentValues contentValues = new ContentValues();
+
+            //set the updated values
             contentValues.put(employeeDatabase.NAME,name);
             contentValues.put(employeeDatabase.USERNAME,uname);
             contentValues.put(employeeDatabase.PASSWORD,pword);
@@ -341,65 +397,132 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
     }
 
+    /**
+     * To logout
+     * @param view
+     */
     public void logout(View view) {
 
+        //set the user to null
         user = null;
+
+        //set the userId to null
         userID = Long.valueOf(0);
+
+        //redirect the user to login page
         setContentView(R.layout.activity_main);
     }
 
+    /**
+     * To load the view page to edit user profile
+     */
     public void editProfile()
     {
 
+        //If user is not logged in or if user details are empty, then inform user to re-login
         if(TextUtils.isEmpty(user) || TextUtils.isEmpty(userID.toString()))
         {
             Toast.makeText(this,"Please login again to update the profile",Toast.LENGTH_SHORT).show();
         }
         else {
+
+            //load the edit user page
             setContentView(R.layout.edit_profile);
 
+            //Load the spinner, present in the header page
             Spinner spinner = (Spinner) findViewById(R.id.spinner);
 
+            //Create array Adopter, it will load the array values to spinner
             ArrayAdapter adapter = ArrayAdapter.createFromResource(this, R.array.options, android.R.layout.simple_spinner_dropdown_item);
 
+            //set the adapter to spinner
             spinner.setAdapter(adapter);
+
+            //set onItemSelectedListener, to take the appropriate action on selecting of any option from spinner
             spinner.setOnItemSelectedListener(this);
 
+            //get the name object
             EditText editName = (EditText) findViewById(R.id.editName);
+
+            //get the username object
             EditText editUserName = (EditText) findViewById(R.id.editUserName);
+
+            //get the password object
             EditText editPassword = (EditText) findViewById(R.id.editPassword);
+
+            //get the image object
             selectImg = (ImageView) findViewById(R.id.editImg);
+
+            // set the onClickListener to image field , for selecting the image from galary on click
             selectImg.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+
+                    //set the intent
                     Intent intent = new Intent();
+
+                    //set the type as image, to select images
                     intent.setType("image/*");
+
+                    //set the action as "ACTION_GET_CONTENT"
                     intent.setAction(Intent.ACTION_GET_CONTENT);
+
+                    //startActivityForResult, to return the selected image to user
                     startActivityForResult(Intent.createChooser(intent, "select image"), 1);
                 }
             });
 
+            //select the required columns from DB
             String[] columns = {employeeDatabase.NAME, employeeDatabase.USERNAME, employeeDatabase.PASSWORD, employeeDatabase.IMAGE};
+
+            //set the selection args, @TODO: use userId instead of username
             String[] selectionArgs = {user};
+
+            //get the writable instance of employeeDatabase
             SQLiteDatabase db = employeeDatabase.getWritableDatabase();
+
+            //Query the db to get the user information, @TODO: give the limit to select the user
             Cursor cursor = db.query(employeeDatabase.TABLE_NAME, columns, employeeDatabase.USERNAME + "=?", selectionArgs, null, null, null, null);
 
+            //If count is grater than 0, it means user exists and get the information of that user
             if (cursor.getCount() > 0) {
+                //iterate through while loop
                 while (cursor.moveToNext()) {
+
+                    //get the column index of "name"
                     int nameIndex = cursor.getColumnIndex(employeeDatabase.NAME);
+
+                    //get the value of column index
                     String nameValue = cursor.getString(nameIndex);
+
+                    //Set that value to editName text
                     editName.setText(nameValue);
 
+                    //get the column index of "username"
                     int usernameIndex = cursor.getColumnIndex(employeeDatabase.USERNAME);
+
+                    //get the value of column index
                     String userNameValue = cursor.getString(usernameIndex);
+
+                    //set that value to editUserNamedTxt
                     editUserName.setText(userNameValue);
 
+                    //get the column index of "password"
                     int passwordIndex = cursor.getColumnIndex(employeeDatabase.PASSWORD);
+
+                    //get the value of that column index
                     String passwordValue = cursor.getString(passwordIndex);
+
+                    //set that value to editpassword txt
                     editPassword.setText(passwordValue);
 
+                    //get the column index of "image"
                     int imageIndex = cursor.getColumnIndex(employeeDatabase.IMAGE);
+
+                    //get the value of that column index
                     String imageValue = cursor.getString(imageIndex);
+
+                    //set that value to selectImage
                     selectImg.setImageURI(Uri.parse(imageValue));
 
 
@@ -409,16 +532,29 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
 
     }
+
+    /**
+     * After login or after signup redirect the user to dashborad page
+     * To load the main user profile page
+     */
     public void dashboard()
     {
 
+        //Set the view page
         setContentView(R.layout.successfull_login_layout);
+
+        //get the "showName" object
         TextView showUser = (TextView) findViewById(R.id.showName);
+        //set username to "ShowName", to display username in main page
         showUser.setText(user);
 
+        //get the "showImg" object
         ImageView showImg= (ImageView) findViewById(R.id.showImg);
         Log.d("image is ",imageUri.toString());
+        //set the image uri to "showImg"
         showImg.setImageURI(imageUri);
+
+        //Set the spinner in header page
         Spinner spinner = (Spinner) findViewById(R.id.spinner);
 
         ArrayAdapter adapter = ArrayAdapter.createFromResource(this,R.array.options,android.R.layout.simple_spinner_dropdown_item);
@@ -427,19 +563,41 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         spinner.setOnItemSelectedListener(this);
     }
 
+    /**
+     * To directly login into the system
+     * @TODO : not required, remove this from applictaion
+     * @param view
+     */
     public void directLogin(View view) {
+        //It will load the dashboard page
         dashboard();
     }
 
+    /**
+     * This is the listner to onItemSelectedlIstner() of spinner.
+     *
+     * It will check the selected option of user and compres it
+     * And redirect the user into appropriate page.
+     *
+     * @param parent
+     * @param view
+     * @param position
+     * @param id
+     */
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        //take the text filed of spinner options
         TextView optionTxt = (TextView) view;
         String item = parent.getItemAtPosition(position).toString();
         Log.d("item",item);
+
+        //convert optionTxt to string
         String option = optionTxt.getText().toString();
 
        // Toast.makeText(this,"you have selected "+optionTxt.getText().toString(),Toast.LENGTH_SHORT).show();
         Log.d("option",option);
+
+        //If option is logout, redirect the user into main page/ login page
         if(option.equals("Log Out"))
         {
             Log.d("option","entered into logout");
@@ -447,46 +605,75 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
         else if(option.equals("List DB items"))
         {
+            /**
+             * If option is "List DB items", redirect the user to listDBItems()
+             */
             Log.d("option","entered into list db items");
             //setContentView(R.layout.list_db_items);
             listDbItems();
         }
         else if(option.equals("Dashboard"))
         {
+            /**
+             * If option is "Dashboard", redirect the user to dashboard()
+             */
             Log.d("options","entered into dashboard");
             dashboard();
         }
         else if(option.equals("Edit Profile"))
         {
+            /**
+             * If option is "Edit Profile", redirect the user to editProfile()
+             */
+
+            //If user is not logged in, then show the error message to indicate the user to login into the system
             if(TextUtils.isEmpty(user) || TextUtils.isEmpty(userID.toString()))
             {
                 Toast.makeText(this,"Please login again to update the profile",Toast.LENGTH_LONG).show();
             }
             else {
+                //load the editProfile()
                 Log.d("options", "entered into edit profile");
                 editProfile();
             }
         }
         else if(option.equals("Sync Data From Server"))
         {
+            /**
+             * If option is "Sync Data From Server", load getDataFromServer()
+             */
             getDataFromServer();
         }
     }
 
+    /**
+     * To sync the data with server using volley android networking library.
+     */
     public void getDataFromServer()
     {
+        //create a tag string
         String tag_json_obj = "json_obj_req";
-        String url = "http://192.168.1.7/employee_details.php";
-        final ProgressDialog progressDialog = new ProgressDialog(this);
-        progressDialog.setMessage("Loading ...");
-        progressDialog.show();
 
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET,
+        //set the url
+        String url = "http://192.168.1.7/employee_details.php";
+
+        //to show the progress, set progressDialog with the message "Loading ..."
+        final ProgressDialog progressDialog = new ProgressDialog(this);
+
+        //set message
+        progressDialog.setMessage("Loading ...");
+
+        //display the progressDialog
+        progressDialog.show();
+        Log.d("function","get Data from server");
+
+        //n
+        StringRequest stringRequest = new StringRequest(Request.Method.POST,
                 url,
-                null,
-                new Response.Listener<JSONObject>() {
+                //null,
+                new Response.Listener<String>() {
                     @Override
-                    public void onResponse(JSONObject response) {
+                    public void onResponse(String response) {
                         Log.d("Response",response.toString());
                         Toast.makeText(getApplicationContext(),"successfully made request to server",Toast.LENGTH_LONG).show();
                         progressDialog.hide();
@@ -499,8 +686,21 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                         Toast.makeText(getApplicationContext(),"failed to made request to server",Toast.LENGTH_LONG).show();
                         progressDialog.hide();
                     }
-                });
-        AppController.getInstance().addToRequestQueue(jsonObjectRequest,tag_json_obj);
+                }){
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String,String> params = new HashMap<String, String>();
+                Log.d("user",user);
+                params.put("username",user);
+                params.put("id",userID.toString());
+                params.put("name","add");
+                params.put("password","sdasd");
+                params.put("image","sdssf");
+                return params;
+                //return super.getParams();
+            }
+        };
+        AppController.getInstance().addToRequestQueue(stringRequest,tag_json_obj);
     }
 
     public void listDbItems()
