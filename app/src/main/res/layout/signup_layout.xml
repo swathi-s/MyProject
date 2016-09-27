@@ -21,6 +21,7 @@
         android:inputType="textPersonName"
         android:ems="10"
         android:id="@+id/enterUserName"
+        android:autoLink="web"
         android:layout_below="@+id/enterName"
         android:layout_alignLeft="@+id/enterName"
         android:layout_alignStart="@+id/enterName"

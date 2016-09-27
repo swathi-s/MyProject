@@ -6,6 +6,8 @@
         <item>List DB items</item>
         <item>Dashboard</item>
         <item>Edit Profile</item>
+        <item>Register User in Server</item>
         <item>Sync Data From Server</item>
+        <item>Get Latest News</item>
     </string-array>
 </resources>

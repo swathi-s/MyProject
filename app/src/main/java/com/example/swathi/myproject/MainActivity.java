@@ -28,15 +28,19 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
 
@@ -111,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             SQLiteDatabase db = employeeDatabase.getWritableDatabase();
 
             //list the required columns
-            String[] columns = {employeeDatabase.UID,employeeDatabase.IMAGE};
+            String[] columns = {employeeDatabase.UID,employeeDatabase.IMAGE,employeeDatabase.NAME};
 
             //list the selection arguments for where clause
             String[] selectionArgs = {uname,pword};
@@ -272,7 +276,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         ImageView selectedImg = (ImageView) findViewById(R.id.enterImg);
 
         //convert nameTxt to string
-        String name = nameTxt.getText().toString();
+        String name1 = nameTxt.getText().toString();
 
         //convert userNameTxt to string
         String uname = usernameTxt.getText().toString();
@@ -284,7 +288,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         String selctedImg = imageUri.toString();
 
         //check if any of the fields are empty
-        if(TextUtils.isEmpty(name) || TextUtils.isEmpty(uname) || TextUtils.isEmpty(pword))
+        if(TextUtils.isEmpty(name1) || TextUtils.isEmpty(uname) || TextUtils.isEmpty(pword))
         {
             //if any field is empty then show the error message
             Toast.makeText(this,"all the fields are required",Toast.LENGTH_LONG).show();
@@ -326,6 +330,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             {
                 user = uname;
                 userID = id;
+
+                name = name1;
+                password = pword;
 
                 //After the signup, redirect the user to dashboard page
                 dashboard();
@@ -478,6 +485,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             //set the selection args, @TODO: use userId instead of username
             String[] selectionArgs = {user};
 
+            Log.d("user","in edit profile : "+user);
             //get the writable instance of employeeDatabase
             SQLiteDatabase db = employeeDatabase.getWritableDatabase();
 
@@ -644,8 +652,98 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
              */
             getDataFromServer();
         }
+        else if(option.equals("Get Latest News"))
+        {
+            /**
+             * get latest news from server
+             */
+
+            getLatestNews();
+        }
     }
 
+    public void getLatestNews()
+    {
+        String tag_json_obj = "json_obj_req";
+
+        String url = "http://192.168.1.7/news.php";
+
+        final ProgressDialog progressDialog = new ProgressDialog(this);
+
+        progressDialog.setMessage("Loading ...");
+
+        progressDialog.show();
+
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        Log.d("response","jsonObject type "+response);
+                        try {
+                            Log.d("response","data is "+ response.get("data"));
+                        } catch (JSONException e) {
+                            Log.d("response","error in data "+ e);
+                            e.printStackTrace();
+                        }
+                       // setContentView(R.layout.news_gridview);
+                        Toast.makeText(getApplicationContext(),"data is fetched inside json object request",Toast.LENGTH_LONG).show();
+                        progressDialog.hide();
+                        loadNewsPage(response);
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.d("response","error response inside json type "+error);
+                        Toast.makeText(getApplicationContext(),"error response in json array",Toast.LENGTH_LONG).show();
+                        progressDialog.hide();
+                    }
+                }
+        );
+        /*
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        Log.d("response","in news section "+response);
+                        Toast.makeText(getApplicationContext(),"news information fetched from server",Toast.LENGTH_LONG).show();
+                        progressDialog.hide();
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.d("response","in news section failed to load the data"+error);
+                        Toast.makeText(getApplicationContext(),"failed to fetch the data",Toast.LENGTH_LONG).show();
+                        progressDialog.hide();
+                    }
+                });
+        AppController.getInstance().addToRequestQueue(stringRequest,tag_json_obj);
+        */
+
+        AppController.getInstance().addToRequestQueue(jsonObjectRequest,tag_json_obj);
+
+    }
+
+    public void loadNewsPage(JSONObject response)
+    {
+        try {
+            Object data =  response.get("data");
+
+            Log.d("data",data.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        setContentView(R.layout.news_gridview);
+
+        //Set the spinner in header page
+        Spinner spinner = (Spinner) findViewById(R.id.spinner);
+
+        ArrayAdapter adapter = ArrayAdapter.createFromResource(this,R.array.options,android.R.layout.simple_spinner_dropdown_item);
+
+        spinner.setAdapter(adapter);
+        spinner.setOnItemSelectedListener(this);
+    }
     /**
      * To sync the data with server using volley android networking library.
      */
@@ -693,9 +791,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 Log.d("user",user);
                 params.put("username",user);
                 params.put("id",userID.toString());
-                params.put("name","add");
-                params.put("password","sdasd");
-                params.put("image","sdssf");
+                params.put("name",name);
+                params.put("password",password);
+                params.put("image",selectImg.toString());
                 return params;
                 //return super.getParams();
             }
